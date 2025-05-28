@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections;
 
 public class PlayerController : MonoBehaviour
 {
@@ -6,6 +7,9 @@ public class PlayerController : MonoBehaviour
     private Rigidbody playerRb;
     public float speed = 2.5f;
     private GameObject focalPoint;
+    public bool hasPowerup;
+    private float powerupStrength = 15.0f;
+    public GameObject powerupIndicator;
     
     void Start()
     {
@@ -18,5 +22,36 @@ public class PlayerController : MonoBehaviour
     {
         float forwardInput = Input.GetAxis("Vertical");
         playerRb.AddForce(focalPoint.transform.forward * speed * forwardInput);
+        powerupIndicator.transform.position = transform.position + new Vector3(0, -0.5f, 0);
+    }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.CompareTag("Powerup"))
+        {
+            hasPowerup = true;
+            Destroy(other.gameObject);
+            powerupIndicator.gameObject.SetActive(true);
+            StartCoroutine(PowerupCountdownRoutine());
+        }
+    }
+
+    private void OnCollisionEnter(Collision collision)
+    {
+        
+        Rigidbody enemyRigidbody = collision.gameObject.GetComponent<Rigidbody>();
+        Vector3 awayFromPlayer = (collision.gameObject.transform.position - transform.position);
+
+        if (collision.gameObject.CompareTag("Enemy") && hasPowerup)
+        {
+            enemyRigidbody.AddForce(awayFromPlayer * powerupStrength, ForceMode.Impulse);
+        }
+    }
+
+    IEnumerator PowerupCountdownRoutine()
+    {
+        yield return new WaitForSeconds(7);
+        powerupIndicator.gameObject.SetActive(false);
+        hasPowerup = false;
     }
 }
